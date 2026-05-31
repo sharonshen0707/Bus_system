@@ -1,0 +1,8 @@
+{
+  "name": "Remix: 公車資訊整合與回報系統",
+  "description": "提供乘客多來源對比、群眾一鍵即時回報之公車到站資訊系統，以及提供管理者的即時異常監控與營運數據視覺化儀表板。",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
