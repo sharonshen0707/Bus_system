@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Bus, Monitor, Smartphone, LayoutGrid, CheckCircle2, RefreshCw, 
   Play, Volume2, ShieldCheck, HelpCircle, UserCheck, AlertTriangle
@@ -8,16 +8,47 @@ import { BusRoute, CrowdReport, DataSource, AnomalyEvent, DelayTrendPoint, Repor
 import PassengerPortal from './components/PassengerPortal';
 import AdminDashboard from './components/AdminDashboard';
 import { motion, AnimatePresence } from 'motion/react';
+import { collection, onSnapshot, setDoc, doc, updateDoc, increment } from 'firebase/firestore';
+import { db } from './firebase';
 
 export default function App() {
   const [viewMode, setViewMode] = useState<'split' | 'passenger' | 'admin'>('split');
   
   // Application Data States
   const [routes, setRoutes] = useState<BusRoute[]>(initialRoutes);
-  const [reports, setReports] = useState<CrowdReport[]>(initialReports);
+  const [reports, setReports] = useState<CrowdReport[]>([]);
   const [dataSources, setDataSources] = useState<DataSource[]>(initialDataSources);
   const [anomalies, setAnomalies] = useState<AnomalyEvent[]>(initialAnomalies);
   const [delayTrends, setDelayTrends] = useState<DelayTrendPoint[]>(initialDelayTrends);
+
+  // Real-time listener for Firestore reports
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'reports'), (snapshot) => {
+      const fetched: CrowdReport[] = [];
+      snapshot.forEach((docSnap) => {
+        fetched.push(docSnap.data() as CrowdReport);
+      });
+      // Sort reports by timestamp descending (newest first)
+      fetched.sort((a, b) => b.timestamp - a.timestamp);
+      
+      if (fetched.length > 0) {
+        setReports(fetched);
+      } else {
+        // Seed database if empty so we have initial realistic data
+        initialReports.forEach(async (rep) => {
+          try {
+            await setDoc(doc(db, 'reports', rep.id), rep);
+          } catch (e) {
+            console.error('Error seeding initial report to Firestore:', e);
+          }
+        });
+        setReports(initialReports);
+      }
+    }, (error) => {
+      console.error('Firestore real-time subscription error:', error);
+    });
+    return () => unsub();
+  }, []);
 
   // System Event Logs for visual interest
   const [logs, setLogs] = useState<string[]>([
@@ -33,7 +64,7 @@ export default function App() {
   };
 
   // Submit report handler (Invoked from Smartphone mockup)
-  const handleSubmitReport = (newRep: Omit<CrowdReport, 'id' | 'timestamp' | 'likes' | 'status'>) => {
+  const handleSubmitReport = async (newRep: Omit<CrowdReport, 'id' | 'timestamp' | 'likes' | 'status'>) => {
     const reportId = `rep-${Date.now()}`;
     const reportRecord: CrowdReport = {
       ...newRep,
@@ -43,11 +74,19 @@ export default function App() {
       status: '待審核'
     };
 
-    // Update reports feed
-    setReports(prev => [reportRecord, ...prev]);
+    // Optimistically update reports feed
+    setReports(prev => [reportRecord, ...prev.filter(r => r.id !== reportId)]);
 
     // Add visual system log
     addLog(`[📱 乘客一鍵報報] 收到來自「${newRep.user}」的「${newRep.category}」回報，站點：${newRep.stationName}。`);
+
+    try {
+      await setDoc(doc(db, 'reports', reportId), reportRecord);
+      addLog(`[🔥 Firebase] 乘客回報紀錄已編索引，實時儲存至 Firestore 資料庫 "/reports/${reportId}" 中`);
+    } catch (e) {
+      console.error('Error saving report to Firestore:', e);
+      addLog(`[⚠️ Firebase 錯誤] 儲存回報失敗：${e instanceof Error ? e.message : String(e)}`);
+    }
 
     // Dynamically affect system metrics based on category to prove high-fidelity coupling!
     const updatedRoutes = routes.map(route => {
@@ -99,25 +138,40 @@ export default function App() {
   };
 
   // Like report handler (Passengers upvoting a report they also experienced)
-  const handleLikeReport = (id: string) => {
-    setReports(prev => prev.map(r => {
-      if (r.id === id) {
-        addLog(`[👍 乘客驗證] 使用者對回報「${r.category}」按下確認同意，支持票 (+1)`);
-        return { ...r, likes: r.likes + 1 };
-      }
-      return r;
-    }));
+  const handleLikeReport = async (id: string) => {
+    addLog(`[👍 乘客驗證] 使用者對回報按下確認同意（正在提交至 Firebase 數據庫）`);
+    
+    // Update locally immediately for instant feedback
+    setReports(prev => prev.map(r => r.id === id ? { ...r, likes: r.likes + 1 } : r));
+
+    try {
+      await updateDoc(doc(db, 'reports', id), {
+        likes: increment(1)
+      });
+      addLog(`[🔥 Firebase] 實時同意票 (+1) 已透過 increment 原子儲存寫入！`);
+    } catch (e) {
+      console.error('Error liking report:', e);
+      addLog(`[⚠️ Firebase 錯誤] 同意票更新失敗：${e instanceof Error ? e.message : String(e)}`);
+    }
   };
 
   // Verify and broadcast report handler (Invoked from Admin panel)
-  const handleVerifyReport = (id: string) => {
-    setReports(prev => prev.map(r => {
-      if (r.id === id) {
-        addLog(`[⚖️ 管理授權] 核實並廣播回報 [${r.category}]。到站預估時間已向周邊站牌完成更新廣播！`);
-        return { ...r, status: '已處理' as const, likes: r.likes + 10 };
-      }
-      return r;
-    }));
+  const handleVerifyReport = async (id: string) => {
+    addLog(`[⚖️ 管理授權] 核實並廣播回報。正在將審核狀態（已處理 / 權重+10）寫入 Firebase 數據庫`);
+    
+    // Update locally immediately for instant feedback
+    setReports(prev => prev.map(r => r.id === id ? { ...r, status: '已處理' as const, likes: r.likes + 10 } : r));
+
+    try {
+      await updateDoc(doc(db, 'reports', id), {
+        status: '已處理',
+        likes: increment(10)
+      });
+      addLog(`[🔥 Firebase] 回報狀態審核修改完畢，多終端已實時接收事件廣播！`);
+    } catch (e) {
+      console.error('Error verifying report in Firestore:', e);
+      addLog(`[⚠️ Firebase 錯誤] 後台核實儲存失敗：${e instanceof Error ? e.message : String(e)}`);
+    }
 
     // Raise general route confidence levels because of verification logic
     setRoutes(prev => prev.map(route => {

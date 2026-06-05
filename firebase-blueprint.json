@@ -1,0 +1,30 @@
+{
+  "entities": {
+    "CrowdReport": {
+      "title": "CrowdReport",
+      "description": "A bus dynamics report submitted by the crowd.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "routeName": { "type": "string" },
+        "stationName": { "type": "string" },
+        "category": { "type": "string" },
+        "content": { "type": "string" },
+        "time": { "type": "string" },
+        "timestamp": { "type": "number" },
+        "user": { "type": "string" },
+        "likes": { "type": "number" },
+        "status": { "type": "string", "enum": ["已處理", "審核中", "待審核"] },
+        "photoUrl": { "type": "string" },
+        "anonymous": { "type": "boolean" }
+      },
+      "required": ["id", "routeName", "stationName", "category", "content", "time", "timestamp", "user", "likes", "status", "anonymous"]
+    }
+  },
+  "firestore": {
+    "reports": {
+      "schema": "CrowdReport",
+      "description": "Collection of crowdsourced reports"
+    }
+  }
+}
