@@ -28,7 +28,15 @@ export default function AdminDashboard({
   const [selectedRouteFilter, setSelectedRouteFilter] = useState<string>('全部');
   const [selectedMapRoute, setSelectedMapRoute] = useState<string | undefined>(undefined);
   const [isAutoUpdate, setIsAutoUpdate] = useState(true);
-  const [dateVal, setDateVal] = useState('2024-05-20');
+  const [dateVal, setDateVal] = useState(() => {
+    const now = new Date();
+    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const tzPlus8 = new Date(utc + (3600000 * 8));
+    const year = tzPlus8.getFullYear();
+    const month = String(tzPlus8.getMonth() + 1).padStart(2, '0');
+    const day = String(tzPlus8.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  });
   const [sourceRouteId, setSourceRouteId] = useState<string>('9025A');
 
   // Simulated Metrics calculated from the state
@@ -91,14 +99,14 @@ export default function AdminDashboard({
               }}
               className="bg-transparent border-none outline-none font-semibold text-slate-100 cursor-pointer bg-[#1d222b]"
             >
-              <option value="全部">全部路線</option>
-              <option value="132">132 路</option>
-              <option value="172">172 路</option>
-              <option value="172A">172A 路</option>
-              <option value="173">173 路</option>
-              <option value="133">133 路</option>
-              <option value="133A">133A 路</option>
-              <option value="9025A">9025A 路</option>
+              <option className="bg-[#16191f] text-white font-semibold" value="全部">全部路線</option>
+              <option className="bg-[#16191f] text-white font-semibold" value="132">132 路</option>
+              <option className="bg-[#16191f] text-white font-semibold" value="172">172 路</option>
+              <option className="bg-[#16191f] text-white font-semibold" value="172A">172A 路</option>
+              <option className="bg-[#16191f] text-white font-semibold" value="173">173 路</option>
+              <option className="bg-[#16191f] text-white font-semibold" value="133">133 路</option>
+              <option className="bg-[#16191f] text-white font-semibold" value="133A">133A 路</option>
+              <option className="bg-[#16191f] text-white font-semibold" value="9025A">9025A 路</option>
             </select>
           </div>
 
@@ -216,13 +224,13 @@ export default function AdminDashboard({
                     onChange={(e) => setSourceRouteId(e.target.value)}
                     className="ml-2 bg-[#1d222b] border border-slate-700/60 text-[10.5px] font-bold text-slate-300 rounded px-1.5 py-0.5 outline-none cursor-pointer"
                   >
-                    <option value="9025A">9025A路</option>
-                    <option value="172">172路</option>
-                    <option value="172A">172A路</option>
-                    <option value="173">173路</option>
-                    <option value="132">132路</option>
-                    <option value="133">133路</option>
-                    <option value="133A">133A路</option>
+                    <option className="bg-[#16191f] text-white font-semibold" value="9025A">9025A路</option>
+                    <option className="bg-[#16191f] text-white font-semibold" value="172">172路</option>
+                    <option className="bg-[#16191f] text-white font-semibold" value="172A">172A路</option>
+                    <option className="bg-[#16191f] text-white font-semibold" value="173">173路</option>
+                    <option className="bg-[#16191f] text-white font-semibold" value="132">132路</option>
+                    <option className="bg-[#16191f] text-white font-semibold" value="133">133路</option>
+                    <option className="bg-[#16191f] text-white font-semibold" value="133A">133A路</option>
                   </select>
                 ) : (
                   <span className="text-[11px] font-black text-indigo-400 bg-indigo-500/10 px-2 py-0.5 border border-indigo-500/20 rounded ml-2">
@@ -274,6 +282,10 @@ export default function AdminDashboard({
                   </div>
                 </div>
               ))}
+            </div>
+
+            <div className="mt-2 p-2 bg-amber-500/10 border border-amber-500/20 rounded-xl text-[8.5px] text-amber-300 font-bold leading-normal">
+              ⚠️ 系統數據與串接聲明：受限於沙盒憑證與連線握手限制，本系統無法直連官方客運系統 GPS API，<strong>上列各即時動態網頁連結「僅供參考」。</strong>本系統主要以群眾「一鍵動態校對」為主體。目前系統呈現的部分歷史乘客回報多項評分數據，係由系統模擬多用戶交叉比對建立之仿真基準數據（用以演示可信度評分與自動校正演算法），並會即時與您發送的最新報告連動交叉比對。
             </div>
           </div>
 

@@ -189,11 +189,11 @@ export default function App() {
       <main className="flex-1 overflow-auto bg-[#0f1115] p-4 lg:p-6 no-scrollbar">
 
         {/* System Introduction Banner (approx 200 words Taiwanese Traditional Chinese) */}
-        <div className="mb-6 bg-gradient-to-r from-slate-900 via-slate-900/90 to-slate-950 border border-slate-800 p-4 rounded-2xl flex flex-col md:flex-row items-center gap-4 shadow-lg text-left">
+        <div className="mb-6 bg-gradient-to-r from-slate-900 via-slate-900/90 to-slate-950 border border-slate-800 p-4 rounded-2xl flex flex-col md:flex-row items-start md:items-center gap-4 shadow-lg text-left">
           <div className="w-10 h-10 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-xl flex items-center justify-center shrink-0">
             <HelpCircle className="w-5 h-5" />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-2 flex-1">
             <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest flex items-center gap-1.5">
               <span>系統操作指引 & 功能簡介</span>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -201,6 +201,12 @@ export default function App() {
             <p className="text-[10.5px] text-slate-400 font-semibold leading-relaxed">
               本系統為「中大智慧交通與群眾回報整合系統」，專為中央大學核心公車路線（172、172A、173、133、133A、132、9025A）打造。系統結合「多源API數據比對」與「群眾一鍵回報」雙向驗證機制。乘客可透過手機端登入 Google 帳號，快速回報公車已離站、延遲或漏班等即時動態，讓回報歷史被安全記錄並追蹤；管理端則可於即時監控中心對群眾回報進行核實、一鍵廣播修正到站估時並調整班次可信度，形成即時透明、資訊對稱的智慧大眾運輸閉環，全方位改善校園通勤效率。
             </p>
+            <div className="bg-amber-500/10 border border-amber-500/20 text-amber-300 p-2.5 rounded-xl text-[10px] font-bold leading-relaxed flex items-start gap-1.5">
+              <span className="shrink-0 text-amber-400 font-extrabold">⚠️ 資訊串接與數據來源聲明：</span>
+              <span>
+                受限於沙盒與通訊權限限制，系統未能與客運原廠 API 即時安全對接，<strong>本系統內提供之公車時刻與動態網頁連結「僅供參考」。</strong> 本系統以「群眾校時回報」為主體。當前介面呈現之部分歷史乘客通報與評分，是以多個虛擬回報作為可信度評分（已建立合理之公車動態仿真基準假數據）進行交叉比對演算；同時也與您在左側手機端發送的即時回報進行互動疊加！
+              </span>
+            </div>
           </div>
         </div>
 

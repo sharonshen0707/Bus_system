@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { 
-  Search, Bell, Star, RefreshCw, AlertTriangle, ChevronRight, 
+  Search, Bell, Star, RefreshCw, AlertTriangle, ChevronRight, ChevronDown, 
   ThumbsUp, UserCheck, ShieldCheck, Heart, User, Send, CheckCircle2, 
   MapPin, Upload, Clock, Compass, FileText, ChevronLeft, Layers
 } from 'lucide-react';
@@ -30,6 +30,30 @@ const getFirstStationOfRoute = (routeName: string): string => {
   }
 };
 
+const ROUTE_STATIONS: Record<string, string[]> = {
+  '132': [
+    '中壢公車站', '第一銀行', '第一市場', '舊社', '新明國中(民族路)', '廣興', '仁愛新村', '青果市場', '五權', '祐民醫院', '高雙里', '三民五興路口', '土地公廟', '三民中正路口', '中央大學正門', '中央大學觀景台', '中央大學後門', '中央大學依仁堂', '中大湖', '中央大學警衛室'
+  ],
+  '172': [
+    '中央大學警衛室', '中大湖', '中央大學依仁堂', '中央大學後門', '中央大學觀景台', '中央大學正門', '潤泰公司', '三座厝', '三民里', '崎頂', '三宏', '水圳頭', '內厝', '聖德路口', '領航南文德路口', '領航南公園路口', '青埔', '青埔致遠一路口', '中厝', '高鐵桃園站'
+  ],
+  '172A': [
+    '中原大學全人村', '中原大學信實宿舍', '普忠路', '中園育樂街口', '中園福州二街口', '中福派出所', '啟英高中', '玉尊宮', '土地宮', '桃園大圳橋', '萬能科技大學', '賴厝', '謝厝', '大江購物中心', '鄉界', '寶城', '上岡崎', '岡崎', '青昇路一段132巷口', '青埔致遠一路口', '中厝', '高鐵桃園站', '領航南公園路口', '領航南文德路口', '桃園國際棒球場', '聖德路口', '內厝', '水圳頭', '三宏', '崎頂', '三民里', '三座厝', '潤泰公司', '中央大學正門', '中央大學警衛室', '中大湖', '中央大學依仁堂', '中央大學後門', '中央大學觀景台'
+  ],
+  '173': [
+    '中央大學警衛室', '中大湖', '中央大學依仁堂', '中央大學後門', '中央大學觀景台', '中央大學正門', '潤泰公司', '三座厝', '三民里', '崎頂', '三宏', '水圳頭', '內厝', '聖德路口', '捷運桃園體育園區站(領航北路)', '永裕路口', '領航北民權路口', '青埔國中', '高鐵桃園站'
+  ],
+  '133': [
+    '中壢客運中壢總站', '第一銀行', '第一市場', '舊社', '新明國中(民族路)', '廣興', '仁愛新村', '青果市場', '五權', '祐民醫院', '高雙里', '三民五興路口', '土地公廟', '三民中正路口', '中央大學正門', '中央大學警衛室', '中大湖', '中央大學依仁堂', '中央大學後門', '中央大學觀景台'
+  ],
+  '133A': [
+    '中壢客運中壢總站', '中央延平路口', '中央新生路口', '捷運老街溪站(中央西路)', '民權路口', '新明國小', '曉明幼稚園', '華宏補習班', '中壢高中(中央西路)', '中壢高中(志廣路)', '天祥醫院(志廣路)', '三民', '中央大學正門', '中央大學警衛室', '中大湖', '中央大學依仁堂', '中央大學後門', '中央大學觀景台'
+  ],
+  '9025A': [
+    '中壢公車站', '舊社', '新明國中', '中央大學警衛室', '中央大學依仁堂', '宏國大樓', '捷運環北站', '行天宮', '臺北大學(臺北校區)', '松山機場'
+  ]
+};
+
 export default function PassengerPortal({ 
   routes, 
   reports, 
@@ -41,6 +65,69 @@ export default function PassengerPortal({
   const [activeTab, setActiveTab] = useState<'search' | 'report' | 'my-reports' | 'info'>('search');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRoute, setSelectedRoute] = useState<BusRoute>(routes[0]);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const getBoardingOptionsForRoute = (routeName: string) => {
+    if (routeName === '9025A') {
+      return ['中央大學警衛室', '中央大學依仁堂'];
+    }
+    return ['中央大學警衛室', '中大湖', '中央大學依仁堂', '中央大學後門', '中央大學觀景台'];
+  };
+
+  const getDirectionOptionsForRoute = (routeName: string) => {
+    if (['132', '172', '172A', '133', '133A'].includes(routeName)) {
+      return ['中央大學往中壢', '往 中央大學'];
+    }
+    if (routeName === '173') {
+      return ['往 高鐵桃園站', '往 中央大學'];
+    }
+    if (routeName === '9025A') {
+      return ['往 松山機場', '往 中壢'];
+    }
+    return ['往 單位', '往 校內'];
+  };
+
+  const formatRouteDirection = (routeName: string, dir: string) => {
+    if (dir.startsWith('往') || dir.includes('往')) {
+      return `${routeName} ${dir}`;
+    }
+    return `${routeName} 往 ${dir}`;
+  };
+
+  const formatDirectionOnly = (dir: string) => {
+    if (dir.startsWith('往') || dir.includes('往')) {
+      return dir;
+    }
+    return `往 ${dir}`;
+  };
+
+  const [selectedBoardingStop, setSelectedBoardingStop] = useState<string>('中央大學警衛室');
+  const [selectedDirection, setSelectedDirection] = useState<string>(() => {
+    const route = routes[0];
+    const opts = getDirectionOptionsForRoute(route?.name || '132');
+    return opts[0] || '中央大學往中壢';
+  });
+
+  const getDisplayTo = () => {
+    return selectedDirection || selectedRoute.to;
+  };
+
+  const handleSelectRoute = (route: BusRoute) => {
+    setSelectedRoute(route);
+    const validPresets = getBoardingOptionsForRoute(route.name);
+    const newRouteStations = ROUTE_STATIONS[route.name] || [];
+    let nextStop = selectedBoardingStop;
+    if (!validPresets.includes(selectedBoardingStop) && !newRouteStations.includes(selectedBoardingStop)) {
+      nextStop = '中央大學警衛室';
+      setSelectedBoardingStop('中央大學警衛室');
+    }
+    const defaultDirections = getDirectionOptionsForRoute(route.name);
+    setSelectedDirection(defaultDirections[0] || '中央大學往中壢');
+  };
+
+  const handleBoardingStopChange = (stop: string) => {
+    setSelectedBoardingStop(stop);
+  };
   
   // Google Auth Simulation State
   const [user, setUser] = useState<{
@@ -74,7 +161,14 @@ export default function PassengerPortal({
   const [selectedCategory, setSelectedCategory] = useState<ReportCategory | null>(null);
   const [reportContent, setReportContent] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(true);
-  const [customTime, setCustomTime] = useState('09:41');
+  const [customTime, setCustomTime] = useState(() => {
+    const now = new Date();
+    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const tzPlus8 = new Date(utc + (3600000 * 8));
+    const hours = String(tzPlus8.getHours()).padStart(2, '0');
+    const minutes = String(tzPlus8.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+  });
   const [attachedPhoto, setAttachedPhoto] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
   
@@ -96,7 +190,7 @@ export default function PassengerPortal({
       setShowLoginModal(true);
       return;
     }
-    setSelectedRoute(route);
+    handleSelectRoute(route);
     setReportStep('select-type');
     setSelectedCategory(null);
     setReportContent('');
@@ -150,8 +244,8 @@ export default function PassengerPortal({
   const handleReportSubmit = () => {
     if (!selectedCategory) return;
     onSubmitReport({
-      routeName: `${selectedRoute.name} 往 ${selectedRoute.to}`,
-      stationName: getFirstStationOfRoute(selectedRoute.name),
+      routeName: formatRouteDirection(selectedRoute.name, getDisplayTo()),
+      stationName: selectedBoardingStop,
       category: selectedCategory,
       content: reportContent || `${selectedCategory}：情況需要立即核對。`,
       time: customTime,
@@ -247,6 +341,81 @@ export default function PassengerPortal({
                 />
               </div>
 
+              {/* Dropdown Route Selector */}
+              <div className="relative z-30">
+                <button
+                  type="button"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="w-full flex items-center justify-between bg-white px-4 py-3 rounded-2xl border border-slate-100 shadow-xs text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all outline-none"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>選擇公車路線：<span className="text-emerald-700 font-extrabold">{selectedRoute.name} 路 ({formatDirectionOnly(getDisplayTo())})</span></span>
+                  </div>
+                  <motion.div
+                    animate={{ rotate: isDropdownOpen ? 180 : 0 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    <ChevronDown className="w-4 h-4 text-slate-400" />
+                  </motion.div>
+                </button>
+
+                <AnimatePresence>
+                  {isDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute left-0 right-0 mt-1.5 bg-white border border-slate-100 rounded-3xl shadow-lg z-40 overflow-hidden max-h-[220px] overflow-y-auto no-scrollbar divide-y divide-slate-100"
+                    >
+                      <div className="p-1">
+                        {filteredRoutes.map((route) => {
+                          const isSel = selectedRoute.id === route.id;
+                          return (
+                            <div 
+                              key={route.id}
+                              onClick={() => {
+                                handleSelectRoute(route);
+                                setIsDropdownOpen(false);
+                              }}
+                              className={`p-2.5 rounded-xl flex justify-between items-center cursor-pointer transition-all ${
+                                isSel ? 'bg-emerald-50 text-emerald-800' : 'hover:bg-slate-50 text-slate-700'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10.5px] font-black font-mono shadow-3xs ${
+                                  route.status === '正常' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
+                                }`}>
+                                  {route.name}
+                                </span>
+                                <div className="text-left">
+                                  <div className="text-[11px] font-extrabold text-slate-800">{route.to}</div>
+                                  <div className="text-[9px] font-semibold text-slate-400 mt-0.5">{route.from} ➔ {route.to}</div>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-[10.5px] font-extrabold text-slate-700 font-mono">
+                                  {route.estimateMin > 0 ? `${route.estimateMin} 分` : '已過'}
+                                </div>
+                                <div className="text-[8px] font-bold text-slate-400">
+                                  ⭐ {route.credibility}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {filteredRoutes.length === 0 && (
+                          <div className="p-3 text-center text-xs text-slate-400 font-bold">
+                            無相符路線
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
               {/* Station details comparison panel - if route is selected */}
               <div className="bg-white border border-slate-100 p-4 rounded-3xl shadow-xs space-y-4">
                 <div className="flex justify-between items-start">
@@ -255,22 +424,114 @@ export default function PassengerPortal({
                       <span className="text-emerald-800 font-black text-xs font-mono px-2 py-0.5 rounded bg-emerald-50 border border-emerald-100">
                         {selectedRoute.name} 路
                       </span>
-                      <span className="text-slate-400 font-bold text-xs">往 {selectedRoute.to}</span>
+                      <span className="text-slate-400 font-bold text-xs">{formatDirectionOnly(getDisplayTo())}</span>
                     </div>
                     <div className="text-xs text-slate-500 font-bold mt-1.5 flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 text-blue-500" /> 中壢火車站
+                      <MapPin className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                      <span>目前乘車點：<span className="text-indigo-600 font-extrabold">{selectedBoardingStop}</span></span>
                     </div>
-                    {selectedRoute.isTrial && (
-                      <div className="mt-2 flex flex-col gap-0.5 text-left">
-                        <span className="inline-flex self-start text-[8.5px] font-black tracking-wider bg-rose-50 text-rose-600 border border-rose-100 px-1.5 py-0.2 rounded">
-                          📢 {selectedRoute.routeStatus || '試辦路線'}
-                        </span>
-                        <p className="text-[8px] font-bold text-slate-400">
-                          {selectedRoute.trialPeriod}
-                        </p>
+
+                    {/* Directional Toggle Selector */}
+                    <div className="mt-2 text-left bg-slate-50/50 p-2 rounded-2xl border border-slate-100/60">
+                      <span className="text-[10px] font-bold text-slate-500 tracking-wider block mb-1.5">
+                        🧭 行車方向選擇：
+                      </span>
+                      <div className="flex gap-1">
+                        {getDirectionOptionsForRoute(selectedRoute.name).map((dir) => {
+                          const isDirActive = selectedDirection === dir;
+                          return (
+                            <button
+                              key={dir}
+                              onClick={() => setSelectedDirection(dir)}
+                              className={`flex-1 py-1 px-2 rounded-xl text-[10px] font-black transition-all border cursor-pointer outline-none text-center ${
+                                isDirActive 
+                                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-3xs' 
+                                  : 'bg-white text-slate-600 hover:text-slate-800 border-slate-200/50 hover:bg-slate-50 active:scale-95'
+                              }`}
+                            >
+                              {dir}
+                            </button>
+                          );
+                        })}
                       </div>
-                    )}
-                  </div>
+                    </div>
+
+                    <div className="mt-2 text-left bg-slate-50/50 p-2 rounded-2xl border border-slate-100/60">
+                      <span className="text-[10px] font-bold text-slate-500 tracking-wider block mb-1.5">
+                        📍 更換預設上車點：
+                      </span>
+                      <div className="flex flex-wrap gap-1">
+                        {getBoardingOptionsForRoute(selectedRoute.name).map((stop) => {
+                          const isActive = selectedBoardingStop === stop;
+                           return (
+                             <button
+                               key={stop}
+                               onClick={() => handleBoardingStopChange(stop)}
+                               className={`px-2 py-1 rounded-xl text-[10px] font-black transition-all border cursor-pointer outline-none ${
+                                 isActive 
+                                   ? 'bg-indigo-600 text-white border-indigo-600 shadow-3xs' 
+                                   : 'bg-white text-slate-600 hover:text-slate-800 border-slate-200/50 hover:bg-slate-50 active:scale-95'
+                               }`}
+                             >
+                               {stop}
+                             </button>
+                           );
+                         })}
+ 
+                         {/* Dropdown Select for "其他站牌" */}
+                         {(() => {
+                           const presets = getBoardingOptionsForRoute(selectedRoute.name);
+                           const allStations = ROUTE_STATIONS[selectedRoute.name] || [];
+                           const otherStations = allStations.filter(st => !presets.includes(st));
+                           const isOtherActive = otherStations.includes(selectedBoardingStop);
+ 
+                           if (otherStations.length === 0) return null;
+ 
+                           return (
+                             <div className="relative inline-block">
+                               <select
+                                 value={isOtherActive ? selectedBoardingStop : ""}
+                                 onChange={(e) => {
+                                   if (e.target.value) {
+                                     handleBoardingStopChange(e.target.value);
+                                   }
+                                 }}
+                                 className={`px-2 py-1 pr-6 rounded-xl text-[10px] font-black transition-all border cursor-pointer outline-none appearance-none ${
+                                   isOtherActive 
+                                     ? 'bg-indigo-600 text-white border-indigo-600 shadow-3xs' 
+                                     : 'bg-white text-slate-600 hover:text-slate-800 border-slate-200/50 hover:bg-slate-50 active:scale-95'
+                                 }`}
+                               >
+                                 <option value="" disabled className="text-slate-400 bg-white font-black text-[10px]">
+                                   {isOtherActive ? selectedBoardingStop : "其他站牌 ▾"}
+                                 </option>
+                                 {otherStations.map((stop) => (
+                                   <option key={stop} value={stop} className="text-slate-700 bg-white font-extrabold text-[10px]">
+                                     {stop}
+                                   </option>
+                                 ))}
+                               </select>
+                               <span className={`absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none text-[7.5px] font-bold ${
+                                 isOtherActive ? 'text-indigo-200' : 'text-slate-400'
+                               }`}>
+                                 ▾
+                               </span>
+                             </div>
+                           );
+                         })()}
+                       </div>
+                     </div>
+                     {selectedRoute.isTrial && (
+                       <div className="mt-2 flex flex-col gap-0.5 text-left">
+                         <span className="inline-flex self-start text-[8.5px] font-black tracking-wider bg-rose-50 text-rose-600 border border-rose-100 px-1.5 py-0.2 rounded">
+                           📢 {selectedRoute.routeStatus || '試辦路線'}
+                         </span>
+                         <p className="text-[8px] font-bold text-slate-400">
+                           {selectedRoute.trialPeriod}
+                         </p>
+                       </div>
+                     )}
+                   </div>
                   <button className="w-8 h-8 rounded-full bg-slate-50 text-amber-400 flex items-center justify-center hover:scale-110 active:scale-95 transition-all">
                     <Star className="w-4 h-4 fill-amber-400" />
                   </button>
@@ -377,8 +638,8 @@ export default function PassengerPortal({
                     })}
                   </div>
 
-                  <div className="p-2 bg-indigo-50/40 rounded-xl border border-indigo-100/60 text-[8.5px] text-indigo-700/80 font-bold leading-normal">
-                    ⚠️ 系統準則提示：判斷異常時，請務必先以官方動態網站與客運官網（如公路客運網、中壢/桃園客運官方班表）為最高準則，第三方服務（如雲端公車）僅作為備援數據比對。
+                  <div className="p-2 bg-amber-50/60 rounded-xl border border-amber-200/60 text-[8.5px] text-amber-800 font-bold leading-normal">
+                    ⚠️ 數據連結與模擬宣告：本系統為「群眾動態回報」研究性概念展示，受限於沙盒憑證與官方數據庫連線限制，上列各快捷網頁與即時預估僅供比對參考。本系統資訊信賴基準主要為乘客一鍵回報；目前預置展示之多筆通報數據係經由系統模擬多用戶交叉比對建立之仿真基準假數據（並會即時疊加您在手機端發出的最新回報與可信度評分）。
                   </div>
                 </div>
 
@@ -390,42 +651,6 @@ export default function PassengerPortal({
                   >
                     📝 一鍵回報當前狀態
                   </button>
-                </div>
-              </div>
-
-              {/* Station Lists */}
-              <div className="space-y-2">
-                <h2 className="text-xs font-extrabold text-slate-400 tracking-wider">常用站牌與路線列表</h2>
-                <div className="grid grid-cols-1 gap-2">
-                  {filteredRoutes.map((route) => {
-                    const isSel = selectedRoute.id === route.id;
-                    return (
-                      <div 
-                        key={route.id}
-                        onClick={() => setSelectedRoute(route)}
-                        className={`p-3 rounded-2xl border transition-all cursor-pointer flex justify-between items-center ${isSel ? 'bg-white border-blue-100 shadow-2xs shadow-blue-50' : 'bg-white border-slate-100 hover:bg-slate-50'}`}
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <span className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black font-mono shadow-2xs ${route.status === '正常' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'}`}>
-                            {route.name}
-                          </span>
-                          <div>
-                            <div className="text-xs font-bold text-slate-800">{route.to}</div>
-                            <div className="text-[10px] font-semibold text-slate-400 mt-0.5">{route.from} ➔ {route.to}</div>
-                          </div>
-                        </div>
-
-                        <div className="text-right">
-                          <div className={`text-xs font-bold font-mono ${route.estimateMin > 0 ? 'text-slate-800' : 'text-slate-400'}`}>
-                            {route.estimateMin > 0 ? `${route.estimateMin} 分鐘` : '末班車已過'}
-                          </div>
-                          <div className="text-[9px] font-medium text-slate-400 mt-0.5">
-                            ⭐ 可信度: {route.credibility}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
                 </div>
               </div>
             </motion.div>
@@ -475,7 +700,7 @@ export default function PassengerPortal({
                       <Clock className="w-5 h-5" />
                     </div>
                     <div>
-                      <div className="text-xs font-black text-slate-800">{selectedRoute.name} 往 {selectedRoute.to}</div>
+                      <div className="text-xs font-black text-slate-800">{formatRouteDirection(selectedRoute.name, getDisplayTo())}</div>
                       <div className="text-[10px] text-emerald-700 font-bold">預估剩餘: {selectedRoute.estimateMin > 0 ? `${selectedRoute.estimateMin} 分鐘` : '末班已過'} (高可信度)</div>
                     </div>
                   </div>
@@ -606,7 +831,7 @@ export default function PassengerPortal({
                   <div className="space-y-2">
                     <div className="flex items-center justify-between bg-white px-3 py-2.5 rounded-2xl border border-slate-50">
                       <div>
-                        <div className="text-[11px] font-bold text-slate-700">實名/匿名回報</div>
+                        <div className="text-[11px] font-bold text-slate-700">匿名回報</div>
                         <div className="text-[9px] text-slate-400 font-bold">開啟後，其他乘客僅能看到匿名發布</div>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer select-none">
@@ -656,11 +881,11 @@ export default function PassengerPortal({
                     <div className="text-[10px] font-bold text-slate-400 tracking-wider pb-1.5 border-b border-slate-50">回報內容摘要</div>
                     <div className="flex items-center justify-between text-xs font-semibold">
                       <span className="text-slate-400">回報路線：</span>
-                      <span className="text-slate-700 font-bold">{selectedRoute.name} 路 (往 {selectedRoute.to})</span>
+                      <span className="text-slate-700 font-bold">{selectedRoute.name} 路 ({formatDirectionOnly(getDisplayTo())})</span>
                     </div>
                     <div className="flex items-center justify-between text-xs font-semibold">
                       <span className="text-slate-400">回報站名：</span>
-                      <span className="text-slate-700 font-bold">{getFirstStationOfRoute(selectedRoute.name)}</span>
+                      <span className="text-slate-700 font-bold">{selectedBoardingStop}</span>
                     </div>
                     <div className="flex items-center justify-between text-xs font-semibold">
                       <span className="text-slate-400">異常類型：</span>
